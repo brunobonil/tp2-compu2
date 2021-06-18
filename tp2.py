@@ -2,7 +2,7 @@
 import argparse
 import os
 from posix import O_RDONLY
-
+from threading import Barrier, Thread
 
 def new_header(header):
     header = header.split(b'\n')
@@ -38,61 +38,38 @@ def header(fd):
     header = os.read(fd, len_header)
     return header
 
-def rotar(fd, w, h, name, chunk):
-    os.lseek(fd, 0, 0)
 
+def rotar(h, color):
+    global matriz
+    global lectura
 
-    name = 'left_' + name
-    file = os.open(name, os.O_CREAT | os.O_RDWR)
-    os.write(file, new_header(header(fd))[0])
+    while True:
+        b.wait()
+        block = list()
+        for i in lectura:
+            block.append(bytes([i]))
 
-
-    lectura = os.read(fd, chunk)
-    block = list()
-    for i in lectura:
-        block.append(bytes([i]))
-
-    j = 0
-    f = h
-    # dim = [c, f]
-    matriz = list()
-    matriz = [[[0,0,0] for i in range(w)]for i in range(h)]
-    for x in range(3):
+        # for x in range(color):
         f = h
         j = 0
-        for i in block[x::3]:
+        for i in block[color::3]:
             if f == 0:
                 j += 1
                 f = h
-            matriz[f-1][j][x] = i
+            matriz[f-1][j][color] = i
             f -= 1
 
-    # f = h
-    # j = 0
-    # for i in block[1::3]:
-    #     if f == 0:
-    #         j += 1
-    #         f = dim[1]
-    #     matriz[f-1][j][k+1] = i
-    #     f -= 1
+        if b'' in lectura and len(lectura) < args.size:
+            break
+        b.wait()
 
-
-    # f = h
-    # j = 0
-    # for i in block[2::3]:
-    #     if f == 0:
-    #         j += 1
-    #         f = dim[1]
-    #     matriz[f-1][j][k+2] = i
-    #     f -= 1
-
-
-    
+def write(matriz, file):
     for i in matriz:
         b = b''
         for j in i:
             b += b''.join(j)
         os.write(file, b)
+
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Procesador de Imagenes')
@@ -100,7 +77,9 @@ if __name__=='__main__':
     parser.add_argument('-s', '--size', help='Bloque que desea leer', type=int)
     args = parser.parse_args()
 
-    file = 'test.ppm'
+    file = args.file
+
+    b = Barrier(4)
 
     try:
         fd = os.open(file, os.O_RDWR)
@@ -110,28 +89,40 @@ if __name__=='__main__':
 
 
     hd = header(fd)
-    lista_header = new_header(hd)
-    long = len(lista_header[0])
+    header_ls = new_header(hd)
+    long = len(header_ls[0])
+
+    name = 'left_' + file
+    new_file = os.open(name, os.O_CREAT | os.O_RDWR)
+    os.write(new_file, new_header(header(fd))[0])
+
+    matriz = [[[0,0,0] for i in range(header_ls[1])]for i in range(header_ls[2])]
+    lectura = b''
+    
+    color = [0, 1, 2]
+    hilos = list()
+    for i in range(3):
+        t = Thread(target=rotar, args=(header_ls[2], color[i]))
+        hilos.append(t)
 
 
-    fd = os.open(file, os.O_RDWR)
+    args.size = args.size - (args.size % 3)
+    if args.size <= 0:
+        print("El valor size no puede ser negativo o cero")
+        exit(1)
+
+
     os.lseek(fd, long, 0)
-    chunk = 48 - long      #178829 - long
-    chunk = chunk - (chunk % 3)
-    rotar(fd, lista_header[1], lista_header[2], file, chunk)
+    while True:
+        lectura = os.read(fd, args.size)
+        for i in hilos:
+            if i.is_alive() == False:
+                i.start()
+        b.wait()
+        if b'' in lectura and len(lectura) < args.size:
+            break
+        b.wait()
+    os.close(fd)
+    write(matriz, new_file)
 
-
-    # args.size = args.size - (args.size % 3)
-    # if args.size <= 0:
-    #     print("El valor size no puede ser negativo o cero")
-    #     exit(1)
-
-    # os.lseek(fd, lista_header[0], 0)
-    # while True:
-    #     lectura = os.read(fd, args.size)
-
-    #     if b'' in lectura and len(lectura) < args.size:
-    #         break
-    # os.close(fd)
-
-    #print('Se crearon los archivos de manera exitosa')
+    print('Se crearon los archivos de manera exitosa')
