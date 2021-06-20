@@ -42,28 +42,28 @@ def header(fd):
 def rotar(h, color):
     global matriz
     global lectura
-
+    block = list()
     while True:
         b.wait()
-        block = list()
         for i in lectura:
             block.append(bytes([i]))
 
-        # for x in range(color):
+        #for x in color:
         f = h
-        j = 0
+        c = 0
         for i in block[color::3]:
             if f == 0:
-                j += 1
+                c += 1
                 f = h
-            matriz[f-1][j][color] = i
+            matriz[f-1][c][color] = i
             f -= 1
 
-        if b'' in lectura and len(lectura) < args.size:
-            break
+            if b'' in lectura and len(lectura) < args.size:
+                break
         b.wait()
 
-def write(matriz, file):
+def escribir(file):
+    global matriz
     for i in matriz:
         b = b''
         for j in i:
@@ -94,12 +94,13 @@ if __name__=='__main__':
 
     name = 'left_' + file
     new_file = os.open(name, os.O_CREAT | os.O_RDWR)
-    os.write(new_file, new_header(header(fd))[0])
+    os.write(new_file, header_ls[0])
 
-    matriz = [[[0,0,0] for i in range(header_ls[1])]for i in range(header_ls[2])]
+    matriz = [[[0,0,0] for i in range(header_ls[1])] for i in range(header_ls[2])]
     lectura = b''
     
     color = [0, 1, 2]
+    
     hilos = list()
     for i in range(3):
         t = Thread(target=rotar, args=(header_ls[2], color[i]))
@@ -108,8 +109,8 @@ if __name__=='__main__':
 
     args.size = args.size - (args.size % 3)
     if args.size <= 0:
-        print("El valor size no puede ser negativo o cero")
-        exit(1)
+       print("El valor size no puede ser negativo o cero")
+       exit(1)
 
 
     os.lseek(fd, long, 0)
@@ -122,7 +123,7 @@ if __name__=='__main__':
         if b'' in lectura and len(lectura) < args.size:
             break
         b.wait()
-    os.close(fd)
-    write(matriz, new_file)
+    escribir(new_file)
+    
 
     print('Se crearon los archivos de manera exitosa')
