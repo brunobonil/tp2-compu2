@@ -58,8 +58,8 @@ def rotar(h, color):
             matriz[f-1][c][color] = i
             f -= 1
 
-            if b'' in lectura and len(lectura) < args.size:
-                break
+        if len(lectura) < args.size:
+            break
         b.wait()
 
 def escribir(file):
@@ -98,7 +98,7 @@ if __name__=='__main__':
 
     matriz = [[[0,0,0] for i in range(header_ls[1])] for i in range(header_ls[2])]
     lectura = b''
-    
+
     color = [0, 1, 2]
     
     hilos = list()
@@ -116,13 +116,19 @@ if __name__=='__main__':
     os.lseek(fd, long, 0)
     while True:
         lectura = os.read(fd, args.size)
+        if len(lectura) % 3 != 0:
+            lectura = lectura[:-1]
         for i in hilos:
             if i.is_alive() == False:
                 i.start()
         b.wait()
-        if b'' in lectura and len(lectura) < args.size:
+        if len(lectura) < args.size:
             break
         b.wait()
-    escribir(new_file)
 
+    for i in hilos:
+        i.join()
+
+    escribir(new_file)
     print('Se crearon los archivos de manera exitosa')
+    
