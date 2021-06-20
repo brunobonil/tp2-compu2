@@ -65,12 +65,12 @@ def write(file):
         os.write(file, b)
 
 if __name__=='__main__':
-    fd = os.open('test.ppm', os.O_RDWR)
+    fd = os.open('dog.ppm', os.O_RDWR)
     header = new_header(header(fd))
-    new = os.open('left_test.ppm', os.O_RDWR | os.O_CREAT)
+    new = os.open('left_dog.ppm', os.O_RDWR | os.O_CREAT)
     os.write(new, header[0])
     os.lseek(fd, len(header[0]), 0)
-    leer = 48-len(header[0])
+    leer = 178829-len(header[0])
     leer = leer - (leer % 3)
     block = os.read(fd, leer)
     matriz = [[[0,0,0] for i in range(header[1])]for i in range(header[2])]

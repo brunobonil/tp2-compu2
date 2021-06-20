@@ -124,6 +124,5 @@ if __name__=='__main__':
             break
         b.wait()
     escribir(new_file)
-    
 
     print('Se crearon los archivos de manera exitosa')
