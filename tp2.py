@@ -48,7 +48,6 @@ def rotar(h, color):
         for i in lectura:
             block.append(bytes([i]))
 
-        #for x in color:
         f = h
         c = 0
         for i in block[color::3]:
@@ -130,5 +129,5 @@ if __name__=='__main__':
         i.join()
 
     escribir(new_file)
-    print('Se crearon los archivos de manera exitosa')
+    print('La imagen se roto correctamente')
     
